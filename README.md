@@ -1,132 +1,188 @@
-# Parallel Implementation of Lyrebird Optimization Algorithm (LOA)
 
-## DECLARATION
-This is to certify that the project work entitled "Parallel Implementation of the Lyrebird Optimization Algorithm using OpenMP and CUDA", submitted in partial fulfillment of the requirements for the award of the Degree of Master of Technology (M.Tech) in Computer Science and Engineering, Department of Computer Science and Engineering, Sardar Vallabhbhai National Institute of Technology (SVNIT), Surat, is an authentic and original work carried out under Prof. Anugrah Jain supervision and guidance. To the best of my knowledge, the content of this Project does not form a basis for the award of any previous Degree to anyone else.
+Claude finished the response
 
-## CERTIFICATE OF APPROVAL
-This is to certify that the project work entitled "Parallel Implementation of the Lyrebird Optimization Algorithm using OpenMP and CUDA", submitted by Team, in partial fulfillment of the requirements for the award of the Master of Technology (M.Tech) degree in Computer Science and Engineering, Department of Computer Science and Engineering, Sardar Vallabhbhai National Institute of Technology (SVNIT), Surat, is an authentic and original piece of work carried out by the team under my supervision and guidance. It is understood that by this approval, the undersigned do not necessarily endorse any conclusion drawn or opinion expressed therein, but approve the project for the purpose for which it has been submitted.
+# Parallel Implementation of Lyrebird Optimization Algorithm (LOA) ## DECLARATION This is to certify that the project work entitled "Parallel Implementation of the Lyrebird Optimization Algorithm using OpenMP and CUDA", submitted in partial fulfillment of the requirements for the award of the Degre
 
----
-
-## ABSTRACT
-In this work, we present a parallel implementation of the Lyrebird Optimization Algorithm (LOA), a recently developed bio-inspired metaheuristic that models the escape and hiding behavior of lyrebirds in nature. While the original LOA has shown strong performance in solving complex optimization problems, its sequential design limits its efficiency for large-scale tasks. To address this, we develop a parallel version of LOA using OpenMP for multi-core CPUs and CUDA C for GPU acceleration. The exploration (escape) and exploitation (hiding) phases of LOA were redesigned to support data-level and thread-level parallelism without affecting the core search logic.
-
-Experimental results show that the parallel LOA significantly reduces computation time while maintaining and in many cases improving solution accuracy compared to the original sequential LOA. GPU-based parallelization using CUDA provides the highest performance gain, especially for higher-dimensional problems.
-
-**Keywords:** Parallel LOA, metaheuristic optimization, OpenMP, CUDA C, GPU acceleration, benchmark functions, exploration-exploitation.
-
----
-
-## INTRODUCTION
-Optimization problems appear in many areas, including engineering design, data analysis, industry automation, and scientific computation. Traditional deterministic optimization methods struggle when the problem becomes nonlinear, high-dimensional, or complex. Because of these limitations, researchers increasingly rely on metaheuristic algorithms, which use randomization and nature-inspired strategies to search for high-quality solutions.
-
-The Lyrebird Optimization Algorithm (LOA) is inspired by the escape and hiding strategies of lyrebirds in the wild. These behaviors naturally translate into exploration and exploitation. However, its execution time increases significantly when the number of dimensions or benchmark functions grows, making the standard version less suitable for large-scale applications.
-
----
-
-## DESCRIPTION OF AVAILABLE SOLUTION (SEQUENTIAL LOA)
-The currently available solution for the Lyrebird Optimization Algorithm (LOA) is a sequential implementation. In this version, all computational operations such as generating the initial population, evaluating solutions, and updating positions are executed one after another on a single CPU core.
-
-### Computational Bottleneck
-The major performance bottleneck appears because fitness evaluation and solution updates are done solution by solution, not in parallel. This results in:
-* Long execution time, especially for large populations.
-* Slow convergence, since each iteration takes longer.
-* Poor scalability, because it cannot use available CPU/GPU hardware.
-* Limited real-world usability for high-dimensional tasks.
-
-### Pseudocode of Sequential LOA
-1. Input problem information: variables, objective function, and constraints.
-2. Set LOA population size (N) and iterations (T).
-3. Generate the initial population matrix at random.
-4. Evaluate the objective function and determine the best candidate solution.
-5. For t = 1 to T:
-    * For i = 1 to N:
-        * Determine defense strategy (Phase 1 or Phase 2).
-        * Update positions based on Exploration or Exploitation logic.
-6. Output the best quasi-optimal solution.
-
-7. ---
-
-## PROPOSED PARALLEL SOLUTION
-To address the limitations of sequential processing, this work proposes a parallel implementation of LOA using OpenMP for multi-core CPU parallelization and CUDA C for GPU-based acceleration. The core idea is to retain the logic of the original LOA while distributing computational tasks across multiple processing units. Instead of evaluating one solution at a time, many solutions are evaluated simultaneously.
-
-### OpenMP Architecture
-OpenMP is a standardized parallel programming model for shared-memory systems. It uses compiler directives (such as `#pragma omp parallel`) to execute tasks in parallel across multi-core processors. It is especially helpful for accelerating algorithms that contain repeated operations, such as optimization methods.
-
-### CUDA C Architecture
-CUDA C is a parallel computing platform developed by NVIDIA for executing general-purpose computations on GPUs. Unlike CPUs, GPUs contain thousands of lightweight cores, making them ideal for computation-heavy tasks and scientific simulations.
-* **Key Features of CUDA C:**
-    * Designed for GPU-based parallel computing.
-    * Enables thousands of threads to run in parallel.
-    * Provides hierarchical thread organization (grids, blocks, threads).
-    * Supports shared, global, and constant memory for optimized performance.
-
----
-
-## DESCRIPTION OF IMPLEMENTED SOLUTION
-Two parallel execution models were implemented to overcome the sequential bottleneck:
-
-1. **OpenMP-Based Parallel LOA:** Parallelizes major computational parts using multi-core CPU threads. Population fitness evaluation and position updates are distributed using `#pragma omp parallel for`.
-2. **CUDA C-Based Parallel LOA:** Offloads expensive operations to the GPU. Each candidate solution is mapped to thousands of CUDA threads inside a kernel function. Memory transfers between CPU and GPU are optimized to reduce overhead.
-
-### Parallel Pseudocode
-1. Read problem definition (variables, bounds, objective function).
-2. Initialize and generate initial population X randomly.
-3. Evaluate fitness of all N solutions.
-4. Identify global best solution.
-5. For t = 1 to T:
-    * # CPU/GPU parallel region depending on mode.
-    * Parallel For (i = 1 to N): 
-        * Generate random number $r_p$.
-        * If $r_p \le 0.5$: Exploration Phase (Identify safe areas $SA_i$, compute new position $XP_{1,i}$).
-        * Else: Exploitation Phase (Compute hidden move $XP_{2,i}$).
-        * Update $X_i$ if fitness is improved.
-    * End Parallel For.
-6. Update global best solution and end.
-
----
-
-## BENCHMARK FUNCTIONS
-Benchmark functions are standard mathematical test problems used to evaluate optimization algorithms. They test specific capabilities: unimodal functions measure local search, while multimodal functions test global search ability.
-
-| Function | Formula | Global Minimum | Search Domain |
-| :--- | :--- | :--- | :--- |
-| **Rastrigin** | $20+x^2+y^2-10(\cos(2\pi x)+\cos(2\pi y))$ | $f(0,...,0)=0$ | $x,y \in [-5.12, 5.12]$  |
-| **Rosenbrock** | $f(x,y)=(1-x)^2+100(y-x^2)^2$ | $f(1,1)=0$ | $\infty \le x_i \le \infty$  |
-| **Schwefel** | $418.9829 \times 2 - [x \cdot \sin(\sqrt{|x|}) + y \cdot \sin(\sqrt{|y|})]$ | $f(420.96, 420.96)=0$ | $x,y \in [-500, 500]$  |
-| **Zakharov** | $f(x,y)=x^2+y^2+(0.5x+1.5y)^2+(0.5x+1.5y)^4$ | $f(0,0)=0$ | $x,y \in [-5, 10]$  |
-| **Sphere** | $f(x,y)=x^2+y^2$ | $f(0,0)=0$ | $x,y \in [-5.12, 5.12]$  |
-| **Booth** | $f(x,y)=(x+2y-7)^2+(2x+y-5)^2$ | $f(1,3)=0$ | $x,y \in [-10, 10]$  |
-| **Ackley** | $-20\exp(-0.2\sqrt{0.5(x^2+y^2)}) - \exp(0.5(\cos(2\pi x)+\cos(2\pi y))) + e + 20$ | $f(0,0)=0$ | $x,y \in [-5, 5]$  |
-| **Griewank** | $f(x)=1+(1/4000)\sum(x^2)-\prod \cos(x_i/\sqrt{i})$ | $f(0,...,0)=0$ | $-\infty \le x_i \le \infty$  |
-| **Lévi** | $f(x,y)=\sin^2(3\pi x)+(x-1)^2(1+\sin^2(3\pi y))+(y-1)^2(1+\sin^2(2\pi y))$ | $f(1,1)=0$ | $x,y \in [-10, 10]$  |
+pasted
 
 
----
+Sphere Function Optimization 1. CUDA Parallel Implementation %%writefile sphere_cuda.cu #include <iostream> #include <cmath> #include <fstream> #include <curand_kernel.h> #include <cfloat> #include <chrono> using namespace std; #define POP 256 #define DIM 5 #define MAX_IT 8000 #define LB -100.0 #
 
-## RESULTS AND DISCUSSION
-The CUDA and OpenMP implementations of the Parallel Lyrebird Optimization Algorithm (LOA) were tested using different population sizes, dimensions, and benchmark functions to evaluate performance in terms of execution time and solution accuracy. The results were compared with the original sequential LOA to measure speedup and efficiency. These experiments validate how effectively the parallel approach handles high-dimensional optimization tasks.
+pasted
 
-### Hardware and Software Specifications
-* **Platform:** Google Colaboratory 
-* **Runtime:** Python 3 
-* **GPU:** NVIDIA Tesla T4 
-* **GPU Memory:** 16 GB (T4) 
-* **CUDA Version:** 12.2 
-* **Parallel Libraries:** OpenMP (enabled through GCC) and CUDA C kernels 
+this was my readme.md file which gpt generate after reading my report which i believe is just report...
 
-### Performance Comparison Table
-The table below shows the execution time (in seconds) for a fixed population size of 256 and 8000 iterations across various benchmark functions.
+so the project was implementation of a parallel version of a metaheuristic algorithm called lyrebird which is recently published 
 
-| Benchmark Function | Sequential LOA (sec) | OpenMP LOA (sec) | CUDA C LOA (sec) |
-| :--- | :--- | :--- | :--- |
-| **Ackley** | 6.83021 | 5.40686 | 0.851905 |
-| **Beale** | 7.58307 | 7.51366 | 0.754362 |
-| **Booth** | 5.80362 | 6.37571 | 0.697420 |
-| **Griewank** | 9.79295 | 8.89989 | 0.862677 |
-| **Levy** | 16.8502 | 13.2389 | 1.272140 |
-| **Rastrigin** | 6.20622 | 6.03135 | 0.963288 |
-| **Rosenbrock** | 17.2656 | 13.4611 | 1.201019 |
-| **Schwefel** | 15.0554 | 12.9668 | 1.472910 |
-| **Sphere** | 7.34009 | 6.48816 | 0.747855 |
-| **Zakharov** | 7.69702 | 6.76557 | 0.715493 |
+and was tested on 10 benchmark functions and code for sphere function is attached for you to understand algorithm better
+
+can you rewrite the readme file...
+
+the repo only contains ipynb files containing seq algo(code implemented from research paper itself), openmp parallel and cuda parallel
+
+10:39
+
+Architected developer-focused README replacing academic report structure
+Architected developer-focused README replacing academic report structure
+Looking at this, I can see the issue: that "readme.md" reads like an academic report (declaration, certificate of approval, abstract) — useful for a thesis submission, but not what someone lands on when they open your GitHub repo. A README should tell a visitor what's in the repo, how the algorithm works at a glance, and how to actually run the notebooks.
+
+Let me pull up the actual citation for the original LOA paper so the README has a proper reference, then write this out properly.
+
+
+Created a file, read a file
+Created a file, read a file
+A few things worth flagging: I assumed your repo has one notebook per benchmark function (matching the structure of your Sphere example, which bundles serial/OpenMP/CUDA together) — rename that file list if your actual filenames differ. I also dropped the declaration/certificate/abstract boilerplate entirely since that belongs in the thesis submission, not a repo people will actually clone and run.
+
+Two things you might want to fill in yourself: the GPU architecture flag (sm_75) is specific to the T4 you tested on — worth a note if others might run this on different hardware, and the license section is just a placeholder since I don't know what you want there.
+
+
+Readme
+Document · MD 
+the license is of mit so update that as well
+
+10:42
+
+Prepared MIT license file with current year placeholder
+Prepared MIT license file with current year placeholder
+Updated the README's license section to point to a LICENSE file, and added that file with the standard MIT text. Just swap [Your Name] in the LICENSE file for your actual name (or your institution, if that's how you want to hold it) before pushing.
+
+
+Readme
+Document · MD 
+
+LICENSE
+ 
+
+Claude Fable 5 is currently unavailable.
+Learn more(opens in new tab)
+
+
+
+
+Claude is AI and can make mistakes. Please double-check responses.
+
+
+Readme · MD
+# Parallel Lyrebird Optimization Algorithm (LOA)
+ 
+Sequential, OpenMP, and CUDA implementations of the **Lyrebird Optimization Algorithm** — a bio-inspired metaheuristic that models the escape and hiding behavior of lyrebirds — benchmarked across 10 standard test functions.
+ 
+## Overview
+ 
+LOA is a population-based metaheuristic with two search phases:
+- **Exploration (escape):** a candidate moves toward a randomly chosen *better* solution in the population, simulating a lyrebird fleeing toward safer ground.
+- **Exploitation (hiding):** a candidate makes a small local perturbation around its current position, simulating a lyrebird freezing in place and hiding.
+Each individual in the population picks one of the two phases per iteration (roughly 50/50, controlled by a random draw), and keeps the new position only if it improves fitness.
+ 
+The reference (sequential) version evaluates and updates the population one solution at a time, which scales poorly as population size, dimensionality, or iteration count grows. This repo implements two parallel versions of the same logic:
+ 
+| Version | Approach |
+|---|---|
+| **Sequential** | Single-threaded CPU, implemented directly from the original LOA paper |
+| **OpenMP** | Multi-core CPU — `#pragma omp parallel for` distributes the per-solution update step across threads |
+| **CUDA C** | GPU — each candidate solution is mapped to one CUDA thread, so all N solutions are updated concurrently |
+ 
+All three versions share the same update rules; only the execution model differs, so results are directly comparable.
+ 
+## Repository structure
+ 
+Each notebook covers one benchmark function and contains all three implementations (sequential → OpenMP → CUDA) back to back, compiled and run via Colab's `%%writefile` + `!g++`/`!nvcc` shell magic — the same pattern shown below for Sphere.
+ 
+```
+.
+├── Sphere.ipynb
+├── Ackley.ipynb
+├── Beale.ipynb
+├── Booth.ipynb
+├── Griewank.ipynb
+├── Levy.ipynb
+├── Rastrigin.ipynb
+├── Rosenbrock.ipynb
+├── Schwefel.ipynb
+└── Zakharov.ipynb
+```
+ 
+> Rename the list above to match your actual filenames if they differ.
+ 
+Inside each notebook you'll find three self-contained blocks:
+1. `*_serial.cpp` — sequential baseline (`g++`)
+2. `*_omp.cpp` — OpenMP version (`g++ -fopenmp`)
+3. `*_cuda.cu` — CUDA version (`nvcc`)
+Each writes its own source file via `%%writefile`, compiles it, and runs it, printing progress every 1000 iterations, the final best solution, the best fitness value, and total execution time. The CUDA version additionally logs the best fitness and best position at *every* iteration to a CSV file (e.g. `sphere_log.csv`), useful if you want to plot convergence curves.
+ 
+## Benchmark functions
+ 
+| Function | Formula | Global Minimum | Domain |
+|---|---|---|---|
+| Sphere | f(x,y) = x² + y² | f(0,0) = 0 | x,y ∈ [-5.12, 5.12] |
+| Rastrigin | 20 + x² + y² − 10(cos 2πx + cos 2πy) | f(0,...,0) = 0 | x,y ∈ [-5.12, 5.12] |
+| Rosenbrock | (1−x)² + 100(y−x²)² | f(1,1) = 0 | unbounded |
+| Schwefel | 418.9829·2 − [x·sin(√\|x\|) + y·sin(√\|y\|)] | f(420.96, 420.96) = 0 | x,y ∈ [-500, 500] |
+| Zakharov | x² + y² + (0.5x+1.5y)² + (0.5x+1.5y)⁴ | f(0,0) = 0 | x,y ∈ [-5, 10] |
+| Booth | (x+2y−7)² + (2x+y−5)² | f(1,3) = 0 | x,y ∈ [-10, 10] |
+| Ackley | −20·exp(−0.2√(0.5(x²+y²))) − exp(0.5(cos 2πx + cos 2πy)) + e + 20 | f(0,0) = 0 | x,y ∈ [-5, 5] |
+| Griewank | 1 + (1/4000)Σx² − Πcos(xᵢ/√i) | f(0,...,0) = 0 | unbounded |
+| Lévi | sin²(3πx) + (x−1)²(1+sin²(3πy)) + (y−1)²(1+sin²(2πy)) | f(1,1) = 0 | x,y ∈ [-10, 10] |
+| Beale | (1.5−x+xy)² + (2.25−x+xy²)² + (2.625−x+xy³)² | f(3, 0.5) = 0 | x,y ∈ [-4.5, 4.5] |
+ 
+In the actual notebooks the search runs in 5 dimensions (`DIM = 5`) with bounds `[-100, 100]`, not the 2D textbook domains above — the table just identifies which functions are being tested.
+ 
+## Requirements
+ 
+- A C++17-capable compiler (`g++`)
+- OpenMP support (bundled with most modern GCC builds)
+- NVIDIA CUDA Toolkit (developed/tested on **12.2**) and an NVIDIA GPU
+- Tested on **Google Colab** with a Tesla T4 GPU runtime — no local setup needed if you run it there
+## Running the notebooks
+ 
+**On Google Colab (recommended, zero setup):**
+1. Open a notebook, e.g. `Sphere.ipynb`.
+2. `Runtime → Change runtime type → GPU` (needed for the CUDA cells).
+3. Run all cells top to bottom. Each implementation writes its source file, compiles, and executes in sequence.
+**Locally, if you have `nvcc`/`g++` installed:**
+```bash
+# Sequential
+g++ sphere_serial.cpp -o sphere_serial
+./sphere_serial
+ 
+# OpenMP
+g++ -fopenmp sphere_omp.cpp -o sphere_omp
+./sphere_omp
+ 
+# CUDA (adjust -arch for your GPU's compute capability; sm_75 = Turing/T4)
+nvcc -arch=sm_75 sphere_cuda.cu -o sphere_cuda
+./sphere_cuda
+```
+ 
+Default parameters across all three versions: population size `256`, `8000` iterations, dimension `5`.
+ 
+## Results
+ 
+Execution time (seconds), population = 256, iterations = 8000, on a Tesla T4 (Colab):
+ 
+| Function | Sequential | OpenMP | CUDA |
+|---|---|---|---|
+| Ackley | 6.830 | 5.407 | 0.852 |
+| Beale | 7.583 | 7.514 | 0.754 |
+| Booth | 5.804 | 6.376 | 0.697 |
+| Griewank | 9.793 | 8.900 | 0.863 |
+| Levy | 16.850 | 13.239 | 1.272 |
+| Rastrigin | 6.206 | 6.031 | 0.963 |
+| Rosenbrock | 17.266 | 13.461 | 1.201 |
+| Schwefel | 15.055 | 12.967 | 1.473 |
+| Sphere | 7.340 | 6.488 | 0.748 |
+| Zakharov | 7.697 | 6.766 | 0.715 |
+ 
+**Takeaways:**
+- CUDA delivers the largest speedup across the board — roughly 8–13x over the sequential baseline — since all 256 candidates are evaluated and updated concurrently on the GPU.
+- OpenMP gives a smaller, more modest gain. The per-solution work here is light (low dimension, simple fitness functions), so thread-management overhead eats into a chunk of the theoretical multi-core benefit.
+- Solution accuracy (best fitness found) is comparable across all three versions — parallelizing the execution doesn't change the search logic or the quality of the result, only how fast it gets there.
+## Reference
+ 
+Dehghani, M., Bektemyssova, G., Montazeri, Z., Shaikemelev, G., Malik, O. P., & Dhiman, G. (2023). Lyrebird Optimization Algorithm: A New Bio-Inspired Metaheuristic Algorithm for Solving Optimization Problems. *Biomimetics*, 8(6), 507. https://doi.org/10.3390/biomimetics8060507
+ 
+## License
+ 
+This project is licensed under the MIT License — see [LICENSE](LICENSE) for details.
+ 
+
